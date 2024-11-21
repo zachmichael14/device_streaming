@@ -1,3 +1,4 @@
+from enum import Enum
 import socket
 import struct
 
@@ -8,6 +9,11 @@ class NotConnectedException(Exception):
 
 class InvalidCommandException(Exception):
     pass
+
+class CommandResponses(Enum):
+    OK = "OK"
+    INVALID = "INVALID COMMAND"
+    CANT_COMPLETE = "CANNOT COMPLETE"
 
 
 class TrignoClient:
@@ -46,6 +52,12 @@ class TrignoClient:
         self.is_connected = True
         self._configure_base_station()
 
+    def start_streaming(self):
+        self._send_command("START")
+
+    def stop_streaming(self):
+        self._send_command("STOP")
+
     def _connect_socket(self, socket: socket.socket, port: str):
         try:
             socket.settimeout(3)
@@ -68,7 +80,7 @@ class TrignoClient:
             return response
         return response.strip().decode() 
     
-    def _receive_emg_frame(self, frame_size: int = 16 * 4) -> bytes:
+    def receive_emg_frame(self, frame_size: int = 16 * 4) -> bytes:
         """
         For receiving from the EMG_DATA_PORT.
         Data is a 4 byte float across 16 devices, so frame size is 4 * 16.
@@ -78,7 +90,7 @@ class TrignoClient:
             data_buffer += self.emg_data_socket.recv(frame_size - len(data_buffer))
         return struct.unpack("<ffffffffffffffff", data_buffer)
     
-    def send_command(self, command: str) -> bytes:
+    def _send_command(self, command: str) -> bytes:
         """
         Send command to the Trigno base station.
         The base station expects command packets to end with two pairs of 
@@ -89,8 +101,10 @@ class TrignoClient:
 
         response = self._receive_command_response()
 
-        if response != "OK":
+        if response == CommandResponses.INVALID:
             raise InvalidCommandException(f"<{command}> is not a valid Trigno command. Base station response: {response}")
+        elif response == CommandResponses.CANT_COMPLETE:
+            raise InvalidCommandException(f"<{command}> command can't be completed at this time. Base station response: {response}")
         
         return response
     
