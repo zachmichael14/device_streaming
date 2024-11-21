@@ -4,6 +4,10 @@ import multiprocessing
 from queue import Queue
 
 class DeviceManager(ABC):
+    def __init__(self, device_client):
+        self.device_client = device_client
+        self.stream_queue = None
+
     @abstractmethod
     async def connect(self):
         """Connect to the device."""
@@ -17,9 +21,4 @@ class DeviceManager(ABC):
     @abstractmethod
     async def stop_streaming(self):
         """Stop streaming data."""
-        pass
-
-    @abstractmethod
-    def get_device_name(self):
-        """Return the device name."""
         pass
