@@ -3,7 +3,7 @@ import asyncio
 import multiprocessing
 from queue import Queue
 
-class DeviceManager(ABC):
+class AbstractDeviceManager(ABC):
     def __init__(self, device_client):
         self.device_client = device_client
         self.stream_queue = None

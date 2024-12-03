@@ -13,8 +13,10 @@ class AbstractDeviceClient(QObject, metaclass=QObjectABCMeta):
         super().__init__(parent)
 
     @abstractmethod
-    def connect(self):
-        """Connect to device server."""
+    def connect(self) -> bool:
+        """Connect to device server.
+        Return
+        """
         pass
 
     @abstractmethod
@@ -32,3 +34,6 @@ class AbstractDeviceClient(QObject, metaclass=QObjectABCMeta):
         """Stop streaming data from the server."""
         pass
 
+    @abstractmethod
+    def configure(self):
+        pass

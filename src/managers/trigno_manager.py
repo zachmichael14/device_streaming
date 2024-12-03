@@ -5,7 +5,7 @@ import threading
 import time
 
 from abstract_manager import DeviceManager
-from clients.trigno_client import TrignoClient
+from src.clients.trigno.trigno_client import TrignoClient
 
 class StreamState(Enum):
     STOPPED = auto()
