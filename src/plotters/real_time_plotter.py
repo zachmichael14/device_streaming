@@ -2,6 +2,7 @@ import math
 import sys
 from typing import List
 
+from PySide6.QtGui import QPen
 from PySide6.QtWidgets import QApplication, QMainWindow
 from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, mkPen, QPen
 import numpy as np

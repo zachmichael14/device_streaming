@@ -3,7 +3,8 @@ import sys
 from typing import List
 
 from PySide6.QtWidgets import QApplication, QMainWindow
-from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, mkPen, QPen
+from PySide6.QtGui import QPen
+from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, mkPen
 import numpy as np
 
 from src.utils.colors import LabColors
@@ -41,7 +42,8 @@ class DetectedPeakPlotter(QMainWindow):
             plots_are_bilateral: Whether plots are arranged in two columns
         """
         super().__init__()
-
+        for color in self.PENS:
+            print(type(color))
         # Assuming labels are in the same order in which they should be plotted
         self.plot_titles = plot_titles
         self.y_axis_text = y_axis_text
@@ -88,14 +90,22 @@ class DetectedPeakPlotter(QMainWindow):
         """
         styled_title = f'<span style="color: #FFF;">{plot_title}</span>'
         plot = PlotItem(title=styled_title)
-
-        plot.getAxis("left").setLabel(text=self.y_axis_text,
-                                      units=self.y_axis_unit)
+        self._configure_axes(plot)
+        
         
         # Disable auto range for trigger plot
         if plot_title.casefold() != "trigger":
             plot.enableAutoRange()
         return plot
+    
+    def _configure_axes(self, plot: PlotItem):
+        plot.getAxis("left").setLabel(text=self.y_axis_text,
+                                      units=self.y_axis_unit)
+        plot.getAxis("bottom").setLabel(text="Time",
+                                        units="s")
+        plot.getAxis("bottom").setGrid(200)
+
+
     
     def _arrange_subplots(self) -> None:
         """
@@ -147,6 +157,6 @@ class DetectedPeakPlotter(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = RealTimePlotter(["foo", "bar", "Trigger"], "Voltage", "V", 2000)
+    window = DetectedPeakPlotter(["foo", "bar", "Trigger"], "Voltage", "V", 2000)
     window.show()
     sys.exit(app.exec())
