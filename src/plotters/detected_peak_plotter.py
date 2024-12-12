@@ -4,14 +4,16 @@ from typing import List
 
 from PySide6.QtWidgets import QApplication, QMainWindow
 from PySide6.QtGui import QPen
-from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, mkPen
+from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, mkPen, InfiniteLine
 import numpy as np
 
-from src.utils.colors import LabColors
+from src.utils.colors import LabColors, DetectionWindowColors
 
+# TODO: Dynamic detection algorithm
+# TODO: Detection algorithm utils class?
 class DetectedPeakPlotter(QMainWindow):
     """
-    A plotter that plot peaks detected from multiple sensor data.
+    A plotter that plots peaks detected from multiple sensor data.
     
     Assumptions:
     1) Plot titles are sensor labels (from sensor map) and are listed in order 
@@ -22,6 +24,9 @@ class DetectedPeakPlotter(QMainWindow):
     """
 
     PENS: List[QPen] = [mkPen(color) for color in LabColors.get_all_colors()]
+    
+    # This is used to space elements of displayed plot titles
+    SPACING = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
 
     def __init__(self,
                  plot_titles: List[str],
@@ -53,6 +58,8 @@ class DetectedPeakPlotter(QMainWindow):
         # Always round up to ensure all plots fit
         self.row_quantity = math.ceil(len(plot_titles) / self.column_quantity)
 
+        self.detection_windows: List[InfiniteLine] = []
+
         # Subplot objects represent the actual plotting areas
         # Ops on labels, title, axes range, etc. are done on these objects
         self.subplots = self._create_subplots()
@@ -64,7 +71,8 @@ class DetectedPeakPlotter(QMainWindow):
         # Updating plot with new data is done on these objects
         self.subplot_data = self._init_subplot_data(sampling_rate, x_axis_max)
 
-        self.setWindowTitle("Real Time Plot")
+
+        self.setWindowTitle("Detected Peak Plotter")
         self.setCentralWidget(self.main_plot)
 
     def _create_subplots(self) -> List[PlotItem]:
@@ -74,10 +82,35 @@ class DetectedPeakPlotter(QMainWindow):
         Returns:
             List of PlotItem objects
         """
-        subplots: List[PlotItem] = [self._create_plot(title) for title in self.plot_titles]
-        return subplots
+        subplots: List[PlotItem] = []
 
-    def _create_plot(self, plot_title: str) -> PlotItem:
+        for title in self.plot_titles:
+            detection_windows: List[InfiniteLine] = self._create_detection_windows()
+            subplot = self._create_plot(title, detection_windows)
+            subplots.append(subplot)
+        return subplots
+    
+    def _create_detection_windows(self):
+        m_response_start = self._create_detection_line(0.045,
+                                                       DetectionWindowColors.PURPLE.value,
+                                                       "|>")
+        m_response_end = self._create_detection_line(0.058,
+                                                     DetectionWindowColors.PURPLE.value,
+                                                     "<|")
+        h_response_start = self._create_detection_line(0.065,
+                                                      DetectionWindowColors.BLUE.value,
+                                                      "|>")
+        h_response_end = self._create_detection_line(0.085,
+                                                      DetectionWindowColors.BLUE.value,
+                                                      "<|")
+        detection_window = [m_response_start, m_response_end, h_response_start, h_response_end]
+
+        self.detection_windows.append(detection_window)
+        return detection_window
+
+    def _create_plot(self,
+                     plot_title: str,
+                     detection_windows: List[InfiniteLine]) -> PlotItem:
         """
         Create a single plot item with styled title and configured axes.
 
@@ -87,13 +120,18 @@ class DetectedPeakPlotter(QMainWindow):
         Returns:
             Configured PlotItem
         """
-        styled_title = f'<span style="color: #FFF;">{plot_title}</span>'
+        styled_title = f"<b>{plot_title}</b>{self.SPACING}"\
+                    f"<span style='font-size: 12pt; color: {DetectionWindowColors.PURPLE.value}'>ML={0:0.1f} ms, MA={0:0.3f} mV{self.SPACING}"\
+                    f"<span style='color: {DetectionWindowColors.BLUE.value}'>HL={0:0.1f} ms, HA={0:0.3f} mV</span>"
         plot = PlotItem(title=styled_title)
-        self._configure_axes(plot)
         
         # Disable auto range for trigger plot
-        if plot_title.casefold() != "trigger":
+        if "trigger" not in plot_title.casefold():
             plot.enableAutoRange()
+        
+        self._configure_axes(plot)
+        self._add_detection_windows(plot, detection_windows)
+
         return plot
     
     def _configure_axes(self, plot: PlotItem):
@@ -102,6 +140,12 @@ class DetectedPeakPlotter(QMainWindow):
         plot.getAxis("bottom").setLabel(text="Time",
                                         units="s")
         plot.getAxis("bottom").setGrid(200)
+
+    def _add_detection_windows(self,
+                               plot: PlotItem,
+                               detection_windows: List[InfiniteLine]) -> None:
+        for line in detection_windows:
+            plot.addItem(line)
 
     def _arrange_subplots(self) -> None:
         """
@@ -130,6 +174,8 @@ class DetectedPeakPlotter(QMainWindow):
         """
         Initialize subplot data with default x and y values.
 
+        Plots in the same row are assigned the same color. 
+
         Args:
             sampling_rate: Number of samples per second
             x_axis_max: Maximum time range
@@ -142,6 +188,7 @@ class DetectedPeakPlotter(QMainWindow):
 
         subplot_data: List[PlotDataItem] = []
         for index, subplot in enumerate(self.subplots):
+            # Use the same color for all plots in the row
             row_index = int(index / self.column_quantity)
 
             curve: PlotDataItem = subplot.plot(x=default_x_values,
@@ -150,6 +197,26 @@ class DetectedPeakPlotter(QMainWindow):
             subplot_data.append(curve)
         return subplot_data
     
+   
+
+    def _create_detection_line(self,
+                               position,
+                               color,
+                               marker: str,
+                               movable=True,
+                               angle=90):
+        line = InfiniteLine(pos=position,
+                            pen=color,
+                            movable=movable,
+                            angle=angle)
+        line.addMarker(marker)
+        line.sigPositionChangeFinished.connect(self._detection_window_updated)
+
+        return line
+
+    def _detection_window_updated(self, updated_line):
+        print("Line moved")
+        print(updated_line.name())
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
