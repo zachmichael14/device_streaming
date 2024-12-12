@@ -1,3 +1,8 @@
+# Random project bits
+test.py
+*.dll
+*.lib
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
