@@ -42,8 +42,7 @@ class DetectedPeakPlotter(QMainWindow):
             plots_are_bilateral: Whether plots are arranged in two columns
         """
         super().__init__()
-        for color in self.PENS:
-            print(type(color))
+
         # Assuming labels are in the same order in which they should be plotted
         self.plot_titles = plot_titles
         self.y_axis_text = y_axis_text
@@ -118,7 +117,7 @@ class DetectedPeakPlotter(QMainWindow):
             column_index = index % 2
 
             # Trigger plot spans two columns
-            if subplot.titleLabel.text.casefold() == "trigger":
+            if "trigger" in subplot.titleLabel.text.casefold():
                 self.main_plot.addItem(subplot,
                                        row=row_index,
                                        col=column_index,

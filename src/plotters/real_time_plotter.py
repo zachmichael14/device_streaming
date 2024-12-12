@@ -4,7 +4,7 @@ from typing import List
 
 from PySide6.QtGui import QPen
 from PySide6.QtWidgets import QApplication, QMainWindow
-from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, mkPen, QPen
+from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, mkPen
 import numpy as np
 
 from src.utils.colors import LabColors
@@ -112,12 +112,14 @@ class RealTimePlotter(QMainWindow):
             column_index = index % 2
 
             # Trigger plot spans two columns
-            if subplot.titleLabel.text.casefold() == "trigger":
+            if "trigger" in subplot.titleLabel.text.casefold():
+                print("found trgig")
                 self.main_plot.addItem(subplot,
                                        row=row_index,
                                        col=column_index,
                                        colspan=2)
             else:
+                print(subplot.titleLabel.text.casefold())
                 self.main_plot.addItem(subplot,
                                        row=row_index,
                                        col=column_index)
