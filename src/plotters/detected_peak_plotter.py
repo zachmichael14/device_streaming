@@ -91,7 +91,6 @@ class DetectedPeakPlotter(QMainWindow):
         plot = PlotItem(title=styled_title)
         self._configure_axes(plot)
         
-        
         # Disable auto range for trigger plot
         if plot_title.casefold() != "trigger":
             plot.enableAutoRange()
@@ -104,8 +103,6 @@ class DetectedPeakPlotter(QMainWindow):
                                         units="s")
         plot.getAxis("bottom").setGrid(200)
 
-
-    
     def _arrange_subplots(self) -> None:
         """
         Arrange subplots in the graphics layout widget.
