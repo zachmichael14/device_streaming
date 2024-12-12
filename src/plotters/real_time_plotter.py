@@ -92,14 +92,16 @@ class RealTimePlotter(QMainWindow):
         """
         styled_title = f'<span style="color: #FFF;">{plot_title}</span>'
         plot = PlotItem(title=styled_title)
-
-        plot.getAxis("left").setLabel(text=self.y_axis_text,
-                                      units=self.y_axis_unit)
+        self._configure_axes(plot)
         
         # Disable auto range for trigger plot
         if plot_title.casefold() != "trigger":
             plot.enableAutoRange()
         return plot
+    
+    def _configure_axes(self, plot: PlotItem) -> None:
+        plot.getAxis("left").setLabel(text=self.y_axis_text,
+                                      units=self.y_axis_unit)
     
     def _arrange_subplots(self) -> None:
         """
@@ -113,7 +115,6 @@ class RealTimePlotter(QMainWindow):
 
             # Trigger plot spans two columns
             if "trigger" in subplot.titleLabel.text.casefold():
-                print("found trgig")
                 self.main_plot.addItem(subplot,
                                        row=row_index,
                                        col=column_index,
