@@ -150,5 +150,3 @@ class SlideToggle(QWidget):
             painter.drawText(QRect(30, 0, 26, self._toggle_height),
                              Qt.AlignCenter,
                              "OFF")
-    def is_checked(self) -> bool:
-        return self._is_checked
